@@ -99,9 +99,14 @@ class BaseHAEntity(Base, RegisterableDevice):
         self.config_template = None
         self.ha_entity_id = None
         self.discovery_prefix = discovery_prefix
+        tgrouplist = indigo.device.getGroupList(indigo_entity.id)
+        if len(tgrouplist) > 1:
+            ttype = indigo.devices[indigo_entity.id].subType
+        else:
+            ttype = None
         self.config = {
             # self.CONFIG_NAME: self.name,
-            self.CONFIG_NAME: None,
+            self.CONFIG_NAME: ttype,
             self.CONFIG_UNIQUE_ID: self.unique_id,
             self.CONFIG_QOS: self.qos
         }
@@ -360,6 +365,12 @@ class BaseStatefulHADevice(BaseStatefulHAEntity, UpdatableDevice):
         super(BaseStatefulHADevice, self).__init__(
             indigo_entity, overrides,
             logger, discovery_prefix)
+        if indigo_entity.address != "":
+            taddress = indigo_entity.address
+        else:
+            taddress = str(indigo_entity.id)
+        tgrouplist = indigo.device.getGroupList(indigo_entity.id)
+        tname = indigo.devices[tgrouplist[0]].name
         self.config.update({
             self.PAYLOAD_OFF_KEY: self._overrideable_get(
                 self.PAYLOAD_OFF_KEY,
@@ -369,11 +380,11 @@ class BaseStatefulHADevice(BaseStatefulHAEntity, UpdatableDevice):
                 self.payload_on),
             self.JSON_ATTRIBUTES_TOPIC_KEY: self.json_attribute_topic,
             'device': {
-                'identifiers': [indigo_entity.address, indigo_entity.id],
+                'identifiers': [taddress, indigo_entity.id],
                 'manufacturer': u'{} via Indigo MQTT Bridge'.format(
                     indigo_entity.protocol),
                 'model': indigo_entity.model,
-                'name': indigo_entity.name,
+                'name': tname,
                 'connections': [
                     ['insteon', indigo_entity.address],
                     ['indigo', indigo_entity.id],
