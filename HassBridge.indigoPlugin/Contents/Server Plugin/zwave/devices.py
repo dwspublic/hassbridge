@@ -56,6 +56,7 @@ class ZWaveBatteryStateSensor(Sensor, TimedUpdateCheck):
         self.config.update({self.DEVICE_CLASS_KEY: self.device_class})
 
     DEFAULT_DEVICE_CLASS = "battery"
+    DEFAULT_ENTITY_CATEGORY = "diagnostic"
     DEFAULT_UNIT_OF_MEASURE = '%'
 
     @property
@@ -67,6 +68,12 @@ class ZWaveBatteryStateSensor(Sensor, TimedUpdateCheck):
         return self._overrideable_get(
             self.UNIT_OF_MEASUREMENT_KEY,
             self.DEFAULT_UNIT_OF_MEASURE).format(d=self)
+
+    @property
+    def entity_category(self):
+        return self._overrideable_get(
+            self.ENTITY_CATEGORY_KEY,
+            self.DEFAULT_ENTITY_CATEGORY).format(d=self)
 
     def update(self, orig_dev, new_dev):
         pass

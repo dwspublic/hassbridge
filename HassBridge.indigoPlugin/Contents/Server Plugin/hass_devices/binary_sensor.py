@@ -34,6 +34,8 @@ class BinarySensor(BaseStatefulHADevice):
             self.config.update({self.OFF_DELAY_KEY: self.off_dely})
         if self.value_template is not None:
             self.config.update({self.VALUE_TEMPLATE_KEY: self.value_template})
+        if self.entity_category != "" and self.entity_category != "None":
+            self.config.update({self.ENTITY_CATEGORY_KEY: self.entity_category})
         self.config.update({self.FORCE_UPDATE_KEY: self.force_update})
 
     @property
@@ -45,7 +47,12 @@ class BinarySensor(BaseStatefulHADevice):
 
     @property
     def device_class(self):
-        ret = self._overrideable_get(self.DEVICE_CLASS_KEY, self.DEFAULT_DEVICE_CLASS)
+        ret = self.DEFAULT_DEVICE_CLASS
+        if self.indigo_entity.subType == u'Motion':
+            ret = u'motion'
+        elif self.indigo_entity.subType == u'Tamper':
+            ret = u'tamper'
+        ret = self._overrideable_get(self.DEVICE_CLASS_KEY, ret)
         return ret.format(d=self) if ret is not None else ret
 
     OFF_DELAY_KEY = "off_delay"
@@ -71,3 +78,16 @@ class BinarySensor(BaseStatefulHADevice):
     def force_update(self):
         retval = self._overrideable_get(self.FORCE_UPDATE_KEY, self.DEFAULT_FORCE_UPDATE)
         return str2bool(retval.format(d=self))
+
+    ENTITY_CATEGORY_KEY = "entity_category"
+    DEFAULT_ENTITY_CATEGORY = "None"
+
+    @property
+    def entity_category(self):
+        ret = self.DEFAULT_ENTITY_CATEGORY
+        if "attery" in self.name:
+            ret = u'diagnostic'
+        elif self.indigo_entity.subType == u'Tamper':
+            ret = u'diagnostic'
+        ret = self._overrideable_get(self.ENTITY_CATEGORY_KEY, ret)
+        return ret.format(d=self) if ret is not None else ret

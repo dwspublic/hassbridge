@@ -38,6 +38,8 @@ class Sensor(BaseStatefulHADevice):
         self.config.update({
             self.UNIT_OF_MEASUREMENT_KEY: self.unit_of_measurement})
         self.config.update({self.DEVICE_CLASS_KEY: self.device_class})
+        if self.entity_category != "" and self.entity_category != "None":
+            self.config.update({self.ENTITY_CATEGORY_KEY: self.entity_category})
         del self.config[self.PAYLOAD_ON_KEY]
         del self.config[self.PAYLOAD_OFF_KEY]
 
@@ -51,14 +53,15 @@ class Sensor(BaseStatefulHADevice):
     @property
     def device_class(self):
         ret = self.DEFAULT_DEVICE_CLASS
-        if self.indigo_entity.subModel == u'Humidity':
+        if self.indigo_entity.subType == u'Humidity':
             ret = u'humidity'
-        elif self.indigo_entity.subModel == u'Luminance':
+        elif self.indigo_entity.subType == u'Illuminance':
             ret = u'illuminance'
-        elif self.indigo_entity.subModel == u'Temperature':
+        elif self.indigo_entity.subType == u'Temperature':
             ret = u'temperature'
-        ret = self._overrideable_get(self.DEVICE_CLASS_KEY,
-                                     ret)
+        elif self.indigo_entity.subType == u'Ultraviolet':
+            ret = u'ultraviolet'
+        ret = self._overrideable_get(self.DEVICE_CLASS_KEY, ret)
         return ret.format(d=self) if ret is not None else ret
 
     def _send_state(self, dev):
@@ -91,12 +94,24 @@ class Sensor(BaseStatefulHADevice):
     @property
     def unit_of_measurement(self):
         ret = self.DEFAULT_UNIT_OF_MEASUREMENT
-        if self.indigo_entity.subModel == u'Humidity':
+        if self.indigo_entity.subType == u'Humidity':
             ret = u'%'
-        elif self.indigo_entity.subModel == u'Luminance':
+        elif self.indigo_entity.subType == u'Illuminance':
             ret = u'lx'
-        elif self.indigo_entity.subModel == u'Temperature':
+        elif self.indigo_entity.subType == u'Temperature':
             ret = self.indigo_entity.states[u'sensorValue.ui'].split(' ')[-1]
+        elif self.indigo_entity.subType == u'Ultraviolet':
+            ret = u'nm'
         ret = self._overrideable_get(self.UNIT_OF_MEASUREMENT_KEY,
+                                     ret)
+        return ret.format(d=self) if ret is not None else ret
+
+    ENTITY_CATEGORY_KEY = "entity_category"
+    DEFAULT_ENTITY_CATEGORY = "None"
+
+    @property
+    def entity_category(self):
+        ret = self.DEFAULT_ENTITY_CATEGORY
+        ret = self._overrideable_get(self.ENTITY_CATEGORY_KEY,
                                      ret)
         return ret.format(d=self) if ret is not None else ret

@@ -66,6 +66,7 @@ class Base(object):
                 and key in self.overrides[section] \
                 and self.overrides[section][key]:
             ret = str(self.overrides[section][key]).format(d=self)
+        indigo.server.log("key = " + str(key) + " default = " + str(default) + " ret = " + str(ret) + " section = " + str(section))
         return ret
 
     @property
@@ -99,9 +100,14 @@ class BaseHAEntity(Base, RegisterableDevice):
         self.config_template = None
         self.ha_entity_id = None
         self.discovery_prefix = discovery_prefix
+        # Set the name properly which is really a device type - move this code into routines
         tgrouplist = indigo.device.getGroupList(indigo_entity.id)
         if len(tgrouplist) > 1:
             ttype = indigo.devices[indigo_entity.id].subType
+            if ttype == "":
+                ttype = self.name
+            if "attery" in self.name:
+                ttype = "Battery"
         else:
             ttype = None
         self.config = {
@@ -370,6 +376,7 @@ class BaseStatefulHADevice(BaseStatefulHAEntity, UpdatableDevice):
         else:
             taddress = str(indigo_entity.id)
         tgrouplist = indigo.device.getGroupList(indigo_entity.id)
+        # need to add overrideable call for name here
         tname = indigo.devices[tgrouplist[0]].name
         self.config.update({
             self.PAYLOAD_OFF_KEY: self._overrideable_get(
@@ -386,7 +393,7 @@ class BaseStatefulHADevice(BaseStatefulHAEntity, UpdatableDevice):
                 'model': indigo_entity.model,
                 'name': tname,
                 'connections': [
-                    ['insteon', indigo_entity.address],
+                    ['insteon', taddress],
                     ['indigo', indigo_entity.id],
 
                 ]
