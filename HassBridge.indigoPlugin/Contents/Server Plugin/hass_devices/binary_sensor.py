@@ -52,6 +52,11 @@ class BinarySensor(BaseStatefulHADevice):
             ret = u'motion'
         elif self.indigo_entity.subType == u'Tamper':
             ret = u'tamper'
+        elif self.indigo_entity.subType == u'Door/Window':
+            if 'door' in self.name.lower():
+                ret = u'door'
+            elif 'window' in self.name.lower():
+                ret = u'window'
         ret = self._overrideable_get(self.DEVICE_CLASS_KEY, ret)
         return ret.format(d=self) if ret is not None else ret
 

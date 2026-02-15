@@ -36,11 +36,16 @@ class Light(BaseCommandableHADevice):
                                     logger,
                                     discovery_prefix)
         self._transition_from_dimmer = False
-        self.config.update({
-            self.BIRGHTNESS_STATE_TOPIC_KEY: self.brightness_state_topic,
-            self.BRIGHTNESS_COMMAND_TOPIC_KEY: self.brightness_command_topic,
-            self.BRIGHTNESS_SCALE_KEY: self.brightness_scale
-        })
+        if hasattr(indigo_entity, "brightness"):
+            self.is_dimmable = True
+        else:
+            self.is_dimmable = False
+        if self.is_dimmable:
+            self.config.update({
+                self.BIRGHTNESS_STATE_TOPIC_KEY: self.brightness_state_topic,
+                self.BRIGHTNESS_COMMAND_TOPIC_KEY: self.brightness_command_topic,
+                self.BRIGHTNESS_SCALE_KEY: self.brightness_scale
+            })
         if self.state_value_template is not None:
             self.config.update({
                 self.STATE_VALUE_TEMPLATE_KEY: self.state_value_template
@@ -99,12 +104,13 @@ class Light(BaseCommandableHADevice):
     def register(self):
         super(Light, self).register()
         # register brightness command topic
-        self.logger.debug(f'Subscribing {self.hass_type} with id {self.name}:{self.id} to brightness command topic {self.brightness_command_topic}')
-        get_mqtt_client().message_callback_add(
-            self.brightness_command_topic,
-            self.on_brightness_command_message)
-        get_mqtt_client().subscribe(self.brightness_command_topic)
-        self.__send_brightness_state(self.indigo_entity)
+        if self.is_dimmable:
+            self.logger.debug(f'Subscribing {self.hass_type} with id {self.name}:{self.id} to brightness command topic {self.brightness_command_topic}')
+            get_mqtt_client().message_callback_add(
+                self.brightness_command_topic,
+                self.on_brightness_command_message)
+            get_mqtt_client().subscribe(self.brightness_command_topic)
+            self.__send_brightness_state(self.indigo_entity)
 
     # pylint: disable=unused-argument
     def on_brightness_command_message(self, client, userdata, msg):
@@ -124,7 +130,8 @@ class Light(BaseCommandableHADevice):
 
     def update(self, orig_dev, new_dev):
         super(Light, self).update(orig_dev, new_dev)
-        self.__send_brightness_state(new_dev)
+        if self.is_dimmable:
+            self.__send_brightness_state(new_dev)
 
     def __send_brightness_state(self, dev):
         self.logger.debug(u'Sending brightness state of {} to {}'

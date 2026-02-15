@@ -37,6 +37,7 @@ class ZWaveDefaultTypesGenerator(object):
         if str(dev.protocol).lower() != u'zwave':
             return devices
 
+        logger.debug(u'Overrides = {}'.format(str(overrides)))
         bridge_type = ZWaveDefaultTypesGenerator._evaluate_device_type(dev)
         if 'bridge_type' in overrides:
             bridge_type = overrides['bridge_type']
