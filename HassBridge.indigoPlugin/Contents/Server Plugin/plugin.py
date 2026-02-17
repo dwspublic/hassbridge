@@ -225,17 +225,22 @@ class Plugin(indigo.PluginBase):
     def _connect_to_mqtt_broker(self):
         try:
             self._disconnect_from_mqtt_broker()
-            self.logger.info('Connecting to the MQTT Server...')
+            self.logger.info('Connecting to the MQTT Broker...')
+            if self.config.mqtt_server == "" or self.config.mqtt_server is None:
+                self.logger.error('MQTT Broker Server Address cannot be blank.')
+                return
             self.mqtt_client.username_pw_set(username=self.config.mqtt_username, password=self.config.mqtt_password)
             self.mqtt_client.connect(self.config.mqtt_server, self.config.mqtt_port, 59)
-            self.logger.info('Connected to MQTT Server!')
+            self.logger.info('Connected to MQTT Broker!')
             self.mqtt_client.loop_start()
         except Exception:    # pylint: disable=broad-except
             t, v, tb = sys.exc_info()
             if v.errno == 61:
-                self.logger.critical('Connection Refused when connecting to broker.')
+                self.logger.critical('Connection Refused when connecting to MQTT Broker.')
             elif v.errno == 60:
-                self.logger.error('Timeout when connecting to broker.')
+                self.logger.error('Timeout when connecting to MQTT Broker.')
+            elif v.errno == 8 or v.errno == 65:
+                self.logger.error('Invalid MQTT Broker Server Address.')
             else:
                 self.handle_exception(t, v, tb)
                 raise
@@ -458,6 +463,8 @@ class Plugin(indigo.PluginBase):
             resp = requests.request('GET', url, verify=self.config.hass_ssl_validate, headers=headers)
             if resp.status_code is not requests.codes['OK']:
                 self.logger.warn(f'Unable to get mapping of indigo devices to home assistant entities, received {resp.text}')
+            else:
+                self.logger.debug(f'Connected to HA instance successfully.')
 
             ha_entities = resp.json()
             for ha_entity in ha_entities:
@@ -476,8 +483,11 @@ class Plugin(indigo.PluginBase):
 
         except Exception as e:  # pylint: disable=unused-variable
             t, v, tb = sys.exc_info()
-            self.handle_exception(t, v, tb)
-            raise
+            if "ConnectTimeoutError" in str(v) or "NewConnectionError" in str(v):
+                self.logger.error('Timeout when connecting to HA instance - it might be down.')
+            else:
+                self.handle_exception(t, v, tb)
+                raise
 
     def _register_ha_device(self, ha_device):
         if ha_device.indigo_entity is not None \
