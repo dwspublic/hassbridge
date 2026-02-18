@@ -239,7 +239,7 @@ class InsteonRemote(Base, InsteonRemoteCommandProcessor):
             self.indigo_entity.name + extention).format(d=self)
 
 
-class InsteonBatteryStateSensor(BinarySensor, TimedUpdateCheck):
+class InsteonBatteryStateSensor(Sensor, TimedUpdateCheck):
     # pylint: disable=too-many-arguments
     def __init__(self, indigo_entity, overrides, logger, discovery_prefix,
                  no_comm_minutes):
@@ -247,15 +247,28 @@ class InsteonBatteryStateSensor(BinarySensor, TimedUpdateCheck):
                                                         overrides, logger,
                                                         discovery_prefix)
         self.id = "{}_battery".format(indigo_entity.id)
+        self.config.update({self.DEVICE_CLASS_KEY: self.device_class})
         self.no_comm_minutes = no_comm_minutes
 
     DEFAULT_DEVICE_CLASS = "battery"
+    DEFAULT_ENTITY_CATEGORY = "diagnostic"
+    DEFAULT_UNIT_OF_MEASURE = '%'
 
     @property
     def name(self):
+        return self._overrideable_get(self.CONFIG_NAME, self.indigo_entity.name
+                                      + " Battery").format(d=self)
+    @property
+    def unit_of_measurement(self):
         return self._overrideable_get(
-            self.CONFIG_NAME,
-            self.indigo_entity.name + " Battery").format(d=self)
+            self.UNIT_OF_MEASUREMENT_KEY,
+            self.DEFAULT_UNIT_OF_MEASURE).format(d=self)
+
+    @property
+    def entity_category(self):
+        return self._overrideable_get(
+            self.ENTITY_CATEGORY_KEY,
+            self.DEFAULT_ENTITY_CATEGORY).format(d=self)
 
     def update(self, orig_dev, new_dev):
         pass
