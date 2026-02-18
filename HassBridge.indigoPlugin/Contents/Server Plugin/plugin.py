@@ -130,6 +130,10 @@ class Plugin(indigo.PluginBase):
         self._disconnect_from_mqtt_broker()
         client = MqttClient.get_instance()
         self.mqtt_client = client.client = self._setup_mqtt_client()
+        self.mqtt_client.on_connect = self.on_mqtt_connect
+        self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
+        self.mqtt_client.on_message = self.on_mqtt_message
+        self.mqtt_connected = False
         self._connect_to_mqtt_broker()
         self._setup_ha_devices()
         self._register_ha_devices()
@@ -199,6 +203,7 @@ class Plugin(indigo.PluginBase):
 
         # initial connect to mqtt
         self._connect_to_mqtt_broker()
+        self.sleep(1)
 
         # subscribe to indigo events
         indigo.devices.subscribeToChanges()
@@ -277,6 +282,7 @@ class Plugin(indigo.PluginBase):
                         and isinstance(ha_device, RegisterableDevice):
                     ha_device.shutdown()
             self.mqtt_client.disconnect()
+            self.mqtt_connected = False
             self.mqtt_client.loop_stop()
 
     def on_mqtt_disconnect(self):
