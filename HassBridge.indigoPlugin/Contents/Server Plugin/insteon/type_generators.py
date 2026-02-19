@@ -76,6 +76,15 @@ class InsteonDefaultTypesGenerator(object):
             hass_dev = globals()[bridge_type](dev, overrides, logger,
                                               config.hass_discovery_prefix)
             devices[str(dev.id)] = hass_dev
+
+            # add a secondary device class like a switch for a tamper sensor
+            if bridge_type == InsteonBinarySensor.__name__:
+                if dev.supportsOnState:
+                    bridge_type = InsteonSwitch.__name__
+                    hass_dev = globals()[bridge_type](dev, overrides, logger,
+                                          config.hass_discovery_prefix)
+                    devices[str(dev.id) + "_switch"] = hass_dev
+
         return devices
 
     @staticmethod
